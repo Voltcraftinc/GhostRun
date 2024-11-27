@@ -140,12 +140,14 @@ export default class Game extends Phaser.Scene {
     
         // Ensure the path is centered and scaled properly
         this.background = this.add.tileSprite(
-            screenWidth / 2, // Center horizontally
-            screenHeight / 2, // Center vertically
-            screenWidth, // Adjust width to fit screen
-            screenHeight, // Adjust height to fit screen
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            1080, // Width of your original `path.png`
+            1920, // Height of your original `path.png`
             'path'
-        );
+        ).setScale(this.cameras.main.width / 1080, this.cameras.main.height / 1920).setDepth(0);
+        
+        
     
         // UI Elements
         this.add.image(screenWidth / 2, 50, 'boobucks-game-amount').setScale(0.8).setDepth(20);
