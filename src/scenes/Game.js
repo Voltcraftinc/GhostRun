@@ -11,23 +11,26 @@ export default class Game extends Phaser.Scene {
         this.boobucksCollected = 0; // Boobucks counter
         this.lastMoveTime = 0; // Track time since last movement
         this.moveDelay = 200; // Delay (in milliseconds) between moves
+        this.scrollSpeed = 5; // Parallax scrolling speed
     }
 
     create() {
         console.log('Game Scene');
 
-        // Detect if the game is running on mobile
         const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
 
+        // Dynamic adjustments based on device
         if (isMobile) {
             this.setupForMobile();
-            this.addTouchControls(); // Add touch controls for mobile
         } else {
             this.setupForDesktop();
         }
 
         // Pause Button
-        this.pauseButton = this.add.image(980, 100, 'pause').setInteractive().setScale(1).setDepth(21);
+        this.pauseButton = this.add.image(this.cameras.main.width - 100, 100, 'pause')
+            .setInteractive()
+            .setScale(1)
+            .setDepth(21);
         this.pauseButton.on('pointerdown', this.pauseGame, this);
 
         // Player (Ghost)
@@ -40,6 +43,11 @@ export default class Game extends Phaser.Scene {
 
         // Input Controls
         this.cursors = this.input.keyboard.createCursorKeys();
+
+        // Mobile Touch Controls
+        if (isMobile) {
+            this.addTouchControls();
+        }
 
         // Enemies and Collectibles Groups
         this.enemyGroup = this.physics.add.group();
@@ -71,9 +79,7 @@ export default class Game extends Phaser.Scene {
 
     update(time) {
         // Parallax Scrolling
-        this.background.tilePositionY -= 5;
-        this.leftTree.tilePositionY -= 5;
-        this.rightTree.tilePositionY -= 5;
+        this.background.tilePositionY -= this.scrollSpeed;
 
         // Handle Keyboard Movement (Desktop Only)
         if (time > this.lastMoveTime + this.moveDelay) {
@@ -100,20 +106,15 @@ export default class Game extends Phaser.Scene {
     }
 
     setupForDesktop() {
+        const screenWidth = 1080; // Base width for desktop
+        const screenHeight = 1920; // Base height for desktop
+
         // Background Path for Desktop
-        this.background = this.add.tileSprite(540, 960, 1080, 1920, 'path');
+        this.background = this.add.tileSprite(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 'path');
 
-        // Left and Right Trees
-        this.leftTree = this.add.tileSprite(0, 0, 0, 0, 'left-trees')
-            .setOrigin(0, 0.5)
-            .setDepth(11);
-        this.rightTree = this.add.tileSprite(1080, 0, 0, 0, 'right-trees')
-            .setOrigin(1, 0.5)
-            .setDepth(11);
-
-        // UI Elements for Desktop
+        // UI Elements
         this.add.image(540, 100, 'boobucks-game-amount').setScale(1.0).setDepth(20);
-        this.boobucksText = this.add.text(540, 75, `${this.boobucksCollected}`, {
+        this.boobucksText = this.add.text(540, 100, `${this.boobucksCollected}`, {
             fontSize: '50px',
             fill: '#fff',
         }).setOrigin(0.5).setDepth(21);
@@ -126,26 +127,29 @@ export default class Game extends Phaser.Scene {
     }
 
     setupForMobile() {
+        const screenWidth = this.cameras.main.width;
+        const screenHeight = this.cameras.main.height;
+
+        // Dynamic column calculation for mobile
+        this.columns = [
+            screenWidth * 0.15,
+            screenWidth * 0.35,
+            screenWidth * 0.65,
+            screenWidth * 0.85,
+        ];
+
         // Background Path for Mobile
-        this.background = this.add.tileSprite(540, 960, 1080, 1920, 'path');
+        this.background = this.add.tileSprite(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 'path');
 
-        // Left and Right Trees
-        this.leftTree = this.add.tileSprite(0, 0, 0, 0, 'left-trees')
-            .setOrigin(0, 0.5)
-            .setDepth(11);
-        this.rightTree = this.add.tileSprite(1080, 0, 0, 0, 'right-trees')
-            .setOrigin(1, 0.5)
-            .setDepth(11);
-
-        // UI Elements for Mobile
-        this.add.image(540, 100, 'boobucks-game-amount').setScale(0.8).setDepth(20);
-        this.boobucksText = this.add.text(540, 75, `${this.boobucksCollected}`, {
+        // UI Elements
+        this.add.image(screenWidth / 2, 50, 'boobucks-game-amount').setScale(0.8).setDepth(20);
+        this.boobucksText = this.add.text(screenWidth / 2, 50, `${this.boobucksCollected}`, {
             fontSize: '40px',
             fill: '#fff',
         }).setOrigin(0.5).setDepth(21);
 
-        const hpBar = this.add.image(540, 1820, 'ghostrun-hp-bar').setScale(0.8).setDepth(20);
-        this.hpText = this.add.text(540, 1810, `${this.playerHP}`, {
+        const hpBar = this.add.image(screenWidth / 2, screenHeight - 50, 'ghostrun-hp-bar').setScale(0.8).setDepth(20);
+        this.hpText = this.add.text(screenWidth / 2, screenHeight - 50, `${this.playerHP}`, {
             fontSize: '40px',
             fill: '#000000',
         }).setOrigin(0.5).setDepth(21);
@@ -175,13 +179,18 @@ export default class Game extends Phaser.Scene {
     }
 
     spawnEnemy() {
-        const x = Phaser.Math.RND.pick(this.columns);
-        const enemyType = Phaser.Math.RND.pick(['pumpkin-enemy', 'tombstone-enemy']);
-        const enemy = this.enemyGroup.create(x, 0, enemyType);
+        const x = Phaser.Math.RND.pick(this.columns); // Random column
+        const enemyType = Phaser.Math.RND.pick(['pumpkin-enemy', 'tombstone-enemy']); // Random enemy type
+        const enemy = this.enemyGroup.create(x, 0, enemyType); // Create enemy at the top of the screen
         enemy.setVelocityY(this.speed);
-        enemy.setScale(0.5);
-        enemy.setDepth(9);
+        enemy.setScale(0.5); // Scale the enemy image
+        enemy.setDepth(9); // Ensure the enemy is drawn under the UI elements
+    
+        // Adjust collider size and offset for smaller hitbox
+        enemy.body.setSize(enemy.width * 0.7, enemy.height * 0.5); // 40% of original width and height
+        enemy.body.setOffset(enemy.width * 0.15, enemy.height * 0.15); // Center the collider box
     }
+    
 
     spawnBoobuck() {
         const x = Phaser.Math.RND.pick(this.columns);
@@ -197,6 +206,10 @@ export default class Game extends Phaser.Scene {
         this.hpText.setText(`${this.playerHP}`);
         if (this.playerHP <= 0) {
             console.log('Game Over');
+            this.playerHP = 100; // Reset HP for the next game
+            this.currentColumnIndex = 1; // Reset to starting column
+            this.currentRowIndex = this.rows.length - 1; // Reset to starting row
+            this.player.setPosition(this.columns[this.currentColumnIndex], this.rows[this.currentRowIndex]); // Reset position
             this.scene.start('GameOver');
         }
     }
