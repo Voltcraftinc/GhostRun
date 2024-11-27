@@ -142,10 +142,11 @@ export default class Game extends Phaser.Scene {
         this.background = this.add.tileSprite(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
-            1080, // Width of your original `path.png`
-            1920, // Height of your original `path.png`
+            1080, // Original width of path.png
+            1920, // Original height of path.png
             'path'
-        ).setScale(this.cameras.main.width / 1080, this.cameras.main.height / 1920).setDepth(0);
+        ).setScale(this.cameras.main.width / 1080, this.cameras.main.height / 1920).setDepth(-1);
+        
         
         
     
