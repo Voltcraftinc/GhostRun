@@ -138,19 +138,16 @@ export default class Game extends Phaser.Scene {
             screenWidth * 0.85,
         ];
     
- // Add a static background that fills the entire screen
-this.background = this.add.image(
-    this.cameras.main.centerX, // Center of the screen (X-axis)
-    this.cameras.main.centerY, // Center of the screen (Y-axis)
-    'path'                     // Key of the background image
-);
-
-// Force the background to scale to the size of the screen
-this.background.setDisplaySize(this.cameras.main.width, this.cameras.main.height);
-
-// Ensure the background is behind everything
-this.background.setDepth(-1);
-
+        // Ensure the path is centered and scaled properly
+        this.background = this.add.image(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            'path'
+        )
+        .setOrigin(0.5, 0.5) // Center the image
+        .setDisplaySize(this.cameras.main.width, this.cameras.main.height) // Force full-screen size
+        .setDepth(-1);
+        
         
         
     
