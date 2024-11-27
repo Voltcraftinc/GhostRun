@@ -9,35 +9,19 @@ export default class Game extends Phaser.Scene {
         this.currentRowIndex = this.rows.length - 1; // Start in the bottom row
         this.playerHP = 100; // Player's initial health
         this.boobucksCollected = 0; // Boobucks counter
+        this.lastMoveTime = 0; // Track time since last movement
+        this.moveDelay = 200; // Delay (in milliseconds) between moves
     }
 
     create() {
         console.log('Game Scene');
 
-        // Background Path
-        this.background = this.add.tileSprite(540, 960, 1080, 1920, 'path');
-
-        // Left and Right Trees
-        this.leftTree = this.add.tileSprite(0, 0, 0, 0, 'left-trees')
-            .setOrigin(0, 0.5)
-            .setDepth(11);
-        this.rightTree = this.add.tileSprite(1080, 0, 0, 0, 'right-trees')
-            .setOrigin(1, 0.5)
-            .setDepth(11);
-
-        // UI Elements
-        this.add.image(540, 100, 'boobucks-game-amount').setScale(1.0).setDepth(20);
-
-        this.boobucksText = this.add.text(this.cameras.main.width / 2, 75, `${this.boobucksCollected}`, {
-            fontSize: '50px',
-            fill: '#fff',
-        }).setOrigin(0.5, 0).setDepth(21);
-
-        const hpBar = this.add.image(540, 1820, 'ghostrun-hp-bar').setScale(1).setDepth(20);
-        this.hpText = this.add.text(540, 1810, `${this.playerHP}`, {
-            fontSize: '50px',
-            fill: '#000000',
-        }).setOrigin(0.5).setDepth(21);
+        // Adjust game layout for mobile or desktop
+        if (this.sys.game.device.os.android || this.sys.game.device.os.iOS) {
+            this.setupForMobile();
+        } else {
+            this.setupForDesktop();
+        }
 
         // Pause Button
         this.pauseButton = this.add.image(980, 100, 'pause').setInteractive().setScale(1).setDepth(21);
@@ -87,28 +71,86 @@ export default class Game extends Phaser.Scene {
         this.speed = 200;
     }
 
-    update() {
+    update(time) {
         // Parallax Scrolling
         this.background.tilePositionY -= 5;
         this.leftTree.tilePositionY -= 5;
         this.rightTree.tilePositionY -= 5;
 
-        // Player Keyboard Movement (for PC)
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.left) && this.currentColumnIndex > 0) {
-            this.currentColumnIndex--;
-            this.player.x = this.columns[this.currentColumnIndex];
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right) && this.currentColumnIndex < this.columns.length - 1) {
-            this.currentColumnIndex++;
-            this.player.x = this.columns[this.currentColumnIndex];
-        }
+        // Handle Keyboard Movement with a Delay
+        if (time > this.lastMoveTime + this.moveDelay) {
+            if (this.cursors.left.isDown && this.currentColumnIndex > 0) {
+                this.currentColumnIndex--;
+                this.player.x = this.columns[this.currentColumnIndex];
+                this.lastMoveTime = time; // Update last move time
+            } else if (this.cursors.right.isDown && this.currentColumnIndex < this.columns.length - 1) {
+                this.currentColumnIndex++;
+                this.player.x = this.columns[this.currentColumnIndex];
+                this.lastMoveTime = time; // Update last move time
+            }
 
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.up) && this.currentRowIndex > 0) {
-            this.currentRowIndex--;
-            this.player.y = this.rows[this.currentRowIndex];
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down) && this.currentRowIndex < this.rows.length - 1) {
-            this.currentRowIndex++;
-            this.player.y = this.rows[this.currentRowIndex];
+            if (this.cursors.up.isDown && this.currentRowIndex > 0) {
+                this.currentRowIndex--;
+                this.player.y = this.rows[this.currentRowIndex];
+                this.lastMoveTime = time; // Update last move time
+            } else if (this.cursors.down.isDown && this.currentRowIndex < this.rows.length - 1) {
+                this.currentRowIndex++;
+                this.player.y = this.rows[this.currentRowIndex];
+                this.lastMoveTime = time; // Update last move time
+            }
         }
+    }
+
+    setupForDesktop() {
+        // Background Path for Desktop
+        this.background = this.add.tileSprite(540, 960, 1080, 1920, 'path');
+
+        // Left and Right Trees
+        this.leftTree = this.add.tileSprite(0, 0, 0, 0, 'left-trees')
+            .setOrigin(0, 0.5)
+            .setDepth(11);
+        this.rightTree = this.add.tileSprite(1080, 0, 0, 0, 'right-trees')
+            .setOrigin(1, 0.5)
+            .setDepth(11);
+
+        // UI Elements for Desktop
+        this.add.image(540, 100, 'boobucks-game-amount').setScale(1.0).setDepth(20);
+        this.boobucksText = this.add.text(540, 75, `${this.boobucksCollected}`, {
+            fontSize: '50px',
+            fill: '#fff',
+        }).setOrigin(0.5).setDepth(21);
+
+        const hpBar = this.add.image(540, 1820, 'ghostrun-hp-bar').setScale(1).setDepth(20);
+        this.hpText = this.add.text(540, 1810, `${this.playerHP}`, {
+            fontSize: '50px',
+            fill: '#000000',
+        }).setOrigin(0.5).setDepth(21);
+    }
+
+    setupForMobile() {
+        // Adjust scaling for Mobile
+        this.background = this.add.tileSprite(540, 960, 1080, 1920, 'path');
+
+        // Left and Right Trees
+        this.leftTree = this.add.tileSprite(0, 0, 0, 0, 'left-trees')
+            .setOrigin(0, 0.5)
+            .setDepth(11);
+        this.rightTree = this.add.tileSprite(1080, 0, 0, 0, 'right-trees')
+            .setOrigin(1, 0.5)
+            .setDepth(11);
+
+        // UI Elements for Mobile
+        this.add.image(540, 100, 'boobucks-game-amount').setScale(0.8).setDepth(20);
+        this.boobucksText = this.add.text(540, 75, `${this.boobucksCollected}`, {
+            fontSize: '40px',
+            fill: '#fff',
+        }).setOrigin(0.5).setDepth(21);
+
+        const hpBar = this.add.image(540, 1820, 'ghostrun-hp-bar').setScale(0.8).setDepth(20);
+        this.hpText = this.add.text(540, 1810, `${this.playerHP}`, {
+            fontSize: '40px',
+            fill: '#000000',
+        }).setOrigin(0.5).setDepth(21);
     }
 
     addTouchControls() {
