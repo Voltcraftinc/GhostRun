@@ -129,7 +129,7 @@ export default class Game extends Phaser.Scene {
     setupForMobile() {
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
-
+    
         // Dynamic column calculation for mobile
         this.columns = [
             screenWidth * 0.15,
@@ -137,17 +137,23 @@ export default class Game extends Phaser.Scene {
             screenWidth * 0.65,
             screenWidth * 0.85,
         ];
-
-        // Background Path for Mobile
-        this.background = this.add.tileSprite(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 'path');
-
+    
+        // Ensure the path is centered and scaled properly
+        this.background = this.add.tileSprite(
+            screenWidth / 2, // Center horizontally
+            screenHeight / 2, // Center vertically
+            screenWidth, // Adjust width to fit screen
+            screenHeight, // Adjust height to fit screen
+            'path'
+        );
+    
         // UI Elements
         this.add.image(screenWidth / 2, 50, 'boobucks-game-amount').setScale(0.8).setDepth(20);
         this.boobucksText = this.add.text(screenWidth / 2, 50, `${this.boobucksCollected}`, {
             fontSize: '40px',
             fill: '#fff',
         }).setOrigin(0.5).setDepth(21);
-
+    
         const hpBar = this.add.image(screenWidth / 2, screenHeight - 50, 'ghostrun-hp-bar').setScale(0.8).setDepth(20);
         this.hpText = this.add.text(screenWidth / 2, screenHeight - 50, `${this.playerHP}`, {
             fontSize: '40px',
