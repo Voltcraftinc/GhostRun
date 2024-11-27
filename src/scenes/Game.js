@@ -138,15 +138,19 @@ export default class Game extends Phaser.Scene {
             screenWidth * 0.85,
         ];
     
-        // Ensure the path is centered and scaled properly
-        this.background = this.add.tileSprite(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            1080, // Original width of path.png
-            1920, // Original height of path.png
-            'path'
-        ).setScale(this.cameras.main.width / 1080, this.cameras.main.height / 1920).setDepth(-1);
-        
+ // Add a static background that fills the entire screen
+this.background = this.add.image(
+    this.cameras.main.centerX, // Center of the screen (X-axis)
+    this.cameras.main.centerY, // Center of the screen (Y-axis)
+    'path'                     // Key of the background image
+);
+
+// Force the background to scale to the size of the screen
+this.background.setDisplaySize(this.cameras.main.width, this.cameras.main.height);
+
+// Ensure the background is behind everything
+this.background.setDepth(-1);
+
         
         
     
