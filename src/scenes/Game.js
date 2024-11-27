@@ -16,9 +16,12 @@ export default class Game extends Phaser.Scene {
     create() {
         console.log('Game Scene');
 
-        // Adjust game layout for mobile or desktop
-        if (this.sys.game.device.os.android || this.sys.game.device.os.iOS) {
+        // Detect if the game is running on mobile
+        const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
+
+        if (isMobile) {
             this.setupForMobile();
+            this.addTouchControls(); // Add touch controls for mobile
         } else {
             this.setupForDesktop();
         }
@@ -37,11 +40,6 @@ export default class Game extends Phaser.Scene {
 
         // Input Controls
         this.cursors = this.input.keyboard.createCursorKeys();
-
-        // Enable Touch Controls on Mobile
-        if (this.sys.game.device.os.android || this.sys.game.device.os.iOS) {
-            this.addTouchControls();
-        }
 
         // Enemies and Collectibles Groups
         this.enemyGroup = this.physics.add.group();
@@ -77,26 +75,26 @@ export default class Game extends Phaser.Scene {
         this.leftTree.tilePositionY -= 5;
         this.rightTree.tilePositionY -= 5;
 
-        // Handle Keyboard Movement with a Delay
+        // Handle Keyboard Movement (Desktop Only)
         if (time > this.lastMoveTime + this.moveDelay) {
             if (this.cursors.left.isDown && this.currentColumnIndex > 0) {
                 this.currentColumnIndex--;
                 this.player.x = this.columns[this.currentColumnIndex];
-                this.lastMoveTime = time; // Update last move time
+                this.lastMoveTime = time;
             } else if (this.cursors.right.isDown && this.currentColumnIndex < this.columns.length - 1) {
                 this.currentColumnIndex++;
                 this.player.x = this.columns[this.currentColumnIndex];
-                this.lastMoveTime = time; // Update last move time
+                this.lastMoveTime = time;
             }
 
             if (this.cursors.up.isDown && this.currentRowIndex > 0) {
                 this.currentRowIndex--;
                 this.player.y = this.rows[this.currentRowIndex];
-                this.lastMoveTime = time; // Update last move time
+                this.lastMoveTime = time;
             } else if (this.cursors.down.isDown && this.currentRowIndex < this.rows.length - 1) {
                 this.currentRowIndex++;
                 this.player.y = this.rows[this.currentRowIndex];
-                this.lastMoveTime = time; // Update last move time
+                this.lastMoveTime = time;
             }
         }
     }
@@ -128,7 +126,7 @@ export default class Game extends Phaser.Scene {
     }
 
     setupForMobile() {
-        // Adjust scaling for Mobile
+        // Background Path for Mobile
         this.background = this.add.tileSprite(540, 960, 1080, 1920, 'path');
 
         // Left and Right Trees

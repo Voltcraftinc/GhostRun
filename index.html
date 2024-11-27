@@ -4,25 +4,25 @@
 <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>Ghost Run</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #000000; /* Match the game background */
+            background-color: #000;
             overflow: hidden; /* Prevent scrolling */
             display: flex;
-            justify-content: center; /* Horizontally center */
-            align-items: center; /* Vertically center */
+            justify-content: center; /* Center game horizontally */
+            align-items: center; /* Center game vertically */
             height: 100vh; /* Full viewport height */
             width: 100vw; /* Full viewport width */
         }
-    
+
         canvas {
             display: block;
-            max-width: 100%;
-            height: auto; /* Responsive scaling for mobile */
+            margin: 0 auto; /* Ensure no extra margins on canvas */
+            padding: 0;
         }
     </style>
 </head>
