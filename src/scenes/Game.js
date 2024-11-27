@@ -130,24 +130,17 @@ export default class Game extends Phaser.Scene {
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
     
-        // Dynamic column calculation for mobile
-        this.columns = [
-            screenWidth * 0.15,
-            screenWidth * 0.35,
-            screenWidth * 0.65,
-            screenWidth * 0.85,
-        ];
-    
-        // Ensure the path is centered and scaled properly
-        this.background = this.add.image(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY,
+        // Add Background Path and ensure it's properly scaled
+        this.background = this.add.tileSprite(
+            screenWidth / 2,
+            screenHeight / 2,
+            screenWidth, // Match the screen width
+            screenHeight, // Match the screen height
             'path'
         )
-        .setOrigin(0.5, 0.5) // Center the image
-        .setDisplaySize(this.cameras.main.width, this.cameras.main.height) // Force full-screen size
+        .setOrigin(0.5, 0.5) // Centre the background
         .setDepth(-1);
-        
+    }
         
         
     
