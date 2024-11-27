@@ -156,16 +156,31 @@ export default class Game extends Phaser.Scene {
     }
 
     addTouchControls() {
-        // Enable Drag Movement for Mobile
+        let isDragging = false; // To track if the ghost is being dragged
+    
+        this.input.on('pointerdown', (pointer) => {
+            // Check if the pointer is touching the ghost
+            const ghostBounds = this.player.getBounds();
+            if (ghostBounds.contains(pointer.x, pointer.y)) {
+                isDragging = true;
+            }
+        });
+    
         this.input.on('pointermove', (pointer) => {
-            const closestColumn = this.getClosestColumn(pointer.x);
-            const closestRow = this.getClosestRow(pointer.y);
-
-            this.player.x = closestColumn;
-            this.player.y = closestRow;
+            if (isDragging) {
+                // Only move the ghost when dragging
+                const closestColumn = this.getClosestColumn(pointer.x);
+                const closestRow = this.getClosestRow(pointer.y);
+    
+                this.player.x = closestColumn;
+                this.player.y = closestRow;
+            }
+        });
+    
+        this.input.on('pointerup', () => {
+            isDragging = false; // Stop dragging when the user lifts their finger
         });
     }
-
     getClosestColumn(pointerX) {
         return this.columns.reduce((closest, column) => (
             Math.abs(column - pointerX) < Math.abs(closest - pointerX) ? column : closest
