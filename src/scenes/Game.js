@@ -17,29 +17,29 @@ export default class Game extends Phaser.Scene {
         // Background Path
         this.background = this.add.tileSprite(540, 960, 1080, 1920, 'path');
 
-        // Left and Right Trees (One instance only)
+        // Left and Right Trees
         this.leftTree = this.add.tileSprite(0, 0, 0, 0, 'left-trees')
             .setOrigin(0, 0.5)
-            .setDepth(11); // Above ghost and enemies
+            .setDepth(11);
         this.rightTree = this.add.tileSprite(1080, 0, 0, 0, 'right-trees')
             .setOrigin(1, 0.5)
-            .setDepth(11); // Above ghost and enemies
-
-        // Boobucks Counter Background
-        this.add.image(540, 100, 'boobucks-game-amount').setScale(1.0).setDepth(20);
+            .setDepth(11);
 
         // UI Elements
+        this.add.image(540, 100, 'boobucks-game-amount').setScale(1.0).setDepth(20);
+
         this.boobucksText = this.add.text(this.cameras.main.width / 2, 75, `${this.boobucksCollected}`, {
             fontSize: '50px',
             fill: '#fff',
         }).setOrigin(0.5, 0).setDepth(21);
 
-        const hpBar = this.add.image(540, 1820, 'ghostrun-hp-bar').setScale(1).setDepth(20); // HP bar
+        const hpBar = this.add.image(540, 1820, 'ghostrun-hp-bar').setScale(1).setDepth(20);
         this.hpText = this.add.text(540, 1810, `${this.playerHP}`, {
             fontSize: '50px',
             fill: '#000000',
         }).setOrigin(0.5).setDepth(21);
 
+        // Pause Button
         this.pauseButton = this.add.image(980, 100, 'pause').setInteractive().setScale(1).setDepth(21);
         this.pauseButton.on('pointerdown', this.pauseGame, this);
 
@@ -48,10 +48,16 @@ export default class Game extends Phaser.Scene {
             this.columns[this.currentColumnIndex],
             this.rows[this.currentRowIndex],
             'ghost-main-character'
-        ).setScale(0.5).setDepth(10); // Below trees
+        ).setScale(0.5).setDepth(10);
         this.player.setCollideWorldBounds(true);
 
+        // Input Controls
         this.cursors = this.input.keyboard.createCursorKeys();
+
+        // Enable Touch Controls on Mobile
+        if (this.sys.game.device.os.android || this.sys.game.device.os.iOS) {
+            this.addTouchControls();
+        }
 
         // Enemies and Collectibles Groups
         this.enemyGroup = this.physics.add.group();
@@ -84,10 +90,10 @@ export default class Game extends Phaser.Scene {
     update() {
         // Parallax Scrolling
         this.background.tilePositionY -= 5;
-        this.leftTree.tilePositionY -= 5; // Moving left tree
-        this.rightTree.tilePositionY -= 5; // Moving right tree
+        this.leftTree.tilePositionY -= 5;
+        this.rightTree.tilePositionY -= 5;
 
-        // Player Horizontal Movement
+        // Player Keyboard Movement (for PC)
         if (Phaser.Input.Keyboard.JustDown(this.cursors.left) && this.currentColumnIndex > 0) {
             this.currentColumnIndex--;
             this.player.x = this.columns[this.currentColumnIndex];
@@ -96,7 +102,6 @@ export default class Game extends Phaser.Scene {
             this.player.x = this.columns[this.currentColumnIndex];
         }
 
-        // Player Vertical Movement
         if (Phaser.Input.Keyboard.JustDown(this.cursors.up) && this.currentRowIndex > 0) {
             this.currentRowIndex--;
             this.player.y = this.rows[this.currentRowIndex];
@@ -106,46 +111,64 @@ export default class Game extends Phaser.Scene {
         }
     }
 
+    addTouchControls() {
+        // Enable Drag Movement for Mobile
+        this.input.on('pointermove', (pointer) => {
+            const closestColumn = this.getClosestColumn(pointer.x);
+            const closestRow = this.getClosestRow(pointer.y);
+
+            this.player.x = closestColumn;
+            this.player.y = closestRow;
+        });
+    }
+
+    getClosestColumn(pointerX) {
+        return this.columns.reduce((closest, column) => (
+            Math.abs(column - pointerX) < Math.abs(closest - pointerX) ? column : closest
+        ));
+    }
+
+    getClosestRow(pointerY) {
+        return this.rows.reduce((closest, row) => (
+            Math.abs(row - pointerY) < Math.abs(closest - pointerY) ? row : closest
+        ));
+    }
+
     spawnEnemy() {
-        const x = Phaser.Math.RND.pick(this.columns); // Random column
+        const x = Phaser.Math.RND.pick(this.columns);
         const enemyType = Phaser.Math.RND.pick(['pumpkin-enemy', 'tombstone-enemy']);
-        const enemy = this.enemyGroup.create(x, 0, enemyType); // Start at the top of the screen
+        const enemy = this.enemyGroup.create(x, 0, enemyType);
         enemy.setVelocityY(this.speed);
         enemy.setScale(0.5);
-        enemy.setDepth(9); // Enemy below the trees
-
-        // Adjust collider size and offset
-        enemy.body.setSize(enemy.width * 0.6, enemy.height * 0.6); // 60% of original size
-        enemy.body.setOffset(enemy.width * 0.2, enemy.height * 0.2); // Center the smaller collider
+        enemy.setDepth(9);
     }
 
     spawnBoobuck() {
-        const x = Phaser.Math.RND.pick(this.columns); // Random column
-        const boobuck = this.boobuckGroup.create(x, 0, 'boobuck'); // Start at the top of the screen
+        const x = Phaser.Math.RND.pick(this.columns);
+        const boobuck = this.boobuckGroup.create(x, 0, 'boobuck');
         boobuck.setVelocityY(this.speed);
         boobuck.setScale(0.5);
         boobuck.setDepth(9);
     }
 
     handlePlayerHit(player, enemy) {
-        enemy.destroy(); // Remove the enemy on collision
-        this.playerHP -= 25; // Reduce player HP
-        this.hpText.setText(`HP: ${this.playerHP}`); // Update HP text
+        enemy.destroy();
+        this.playerHP -= 25;
+        this.hpText.setText(`${this.playerHP}`);
         if (this.playerHP <= 0) {
             console.log('Game Over');
-            this.playerHP = 100; // Reset HP for new game
-            this.scene.start('GameOver'); // Go to Game Over screen if HP is 0
+            this.scene.start('GameOver');
         }
     }
 
     collectBoobuck(player, boobuck) {
-        boobuck.destroy(); // Remove the Boobuck from the screen
-        this.boobucksCollected++; // Increase the Boobucks counter
-        this.boobucksText.setText(`Boobucks: ${this.boobucksCollected}`); // Update Boobucks text
+        boobuck.destroy();
+        this.boobucksCollected++;
+        this.boobucksText.setText(`${this.boobucksCollected}`);
     }
 
     pauseGame() {
-        this.scene.pause(); // Pause the current scene
-        this.scene.launch('PauseMenu'); // Launch the PauseMenu overlay
+        this.scene.pause();
+        this.scene.launch('PauseMenu');
     }
 }
