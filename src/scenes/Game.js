@@ -7,11 +7,14 @@ export default class Game extends Phaser.Scene {
         this.rows = [200, 400, 600, 800, 1000, 1200, 1400, 1600]; // Define row positions (y-axis)
         this.currentColumnIndex = 1; // Start in the second column
         this.currentRowIndex = this.rows.length - 1; // Start in the bottom row
-        this.playerHP = 100; // Player's initial health
+        this.lives = 4; // Player starts with 4 lives
         this.boobucksCollected = 0; // Boobucks counter
         this.lastMoveTime = 0; // Track time since last movement
         this.moveDelay = 200; // Delay (in milliseconds) between moves
         this.scrollSpeed = 5; // Parallax scrolling speed
+        this.speed = 200; // Speed for falling objects
+        this.activeBoost = null; // Active boost or effect
+        this.musicPlaying = false; // Flag to check if music is already playing
     }
 
     create() {
@@ -27,7 +30,7 @@ export default class Game extends Phaser.Scene {
         }
 
         // Pause Button
-        this.pauseButton = this.add.image(this.cameras.main.width - 100, 100, 'pause')
+        this.pauseButton = this.add.image(this.cameras.main.width - 100, 50, 'pause')
             .setInteractive()
             .setScale(1)
             .setDepth(21);
@@ -41,6 +44,32 @@ export default class Game extends Phaser.Scene {
         ).setScale(0.5).setDepth(10);
         this.player.setCollideWorldBounds(true);
 
+        // Lives Display
+        this.livesGroup = this.add.group();
+        this.hpBar = this.add.image(this.cameras.main.width / 2, this.cameras.main.height - 50, 'ghostrun-hp-bar')
+            .setScale(1)
+            .setDepth(20);
+        this.updateLivesDisplay();
+
+        // Boobucks Display
+        this.boobucksImage = this.add.image(this.cameras.main.width / 2, 50, 'boobucks-game-amount')
+            .setScale(1)
+            .setDepth(20);
+        this.boobucksText = this.add.text(this.cameras.main.width / 2, 50, `${this.boobucksCollected}`, {
+            fontSize: '40px',
+            fill: '#fff',
+        }).setOrigin(0.5).setDepth(21);
+
+        // Boost Display Area (Top-Left Corner)
+        this.boostDisplay = this.add.image(100, 50, 'boost-crate').setScale(0.5).setDepth(21);
+
+        // Background Music
+        if (!this.musicPlaying) {
+            this.backgroundMusic = this.sound.add('phantom-midnight', { loop: true });
+            this.backgroundMusic.play();
+            this.musicPlaying = true;
+        }
+
         // Input Controls
         this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -52,9 +81,11 @@ export default class Game extends Phaser.Scene {
         // Enemies and Collectibles Groups
         this.enemyGroup = this.physics.add.group();
         this.boobuckGroup = this.physics.add.group();
+        this.lifeGroup = this.physics.add.group();
+        this.boostCrateGroup = this.physics.add.group();
 
         // Spawn Enemies
-        this.time.addEvent({
+        this.enemySpawnTimer = this.time.addEvent({
             delay: 2000,
             callback: this.spawnEnemy,
             callbackScope: this,
@@ -69,12 +100,27 @@ export default class Game extends Phaser.Scene {
             loop: true,
         });
 
+        // Spawn Lives
+        this.time.addEvent({
+            delay: 15000, // Rare spawn
+            callback: this.spawnLife,
+            callbackScope: this,
+            loop: true,
+        });
+
+        // Spawn Boost Crates
+        this.time.addEvent({
+            delay: 20000, // Rare spawn
+            callback: this.spawnBoostCrate,
+            callbackScope: this,
+            loop: true,
+        });
+
         // Collisions
         this.physics.add.overlap(this.player, this.enemyGroup, this.handlePlayerHit, null, this);
         this.physics.add.overlap(this.player, this.boobuckGroup, this.collectBoobuck, null, this);
-
-        // Initial Speed for Enemies and Boobucks
-        this.speed = 200;
+        this.physics.add.overlap(this.player, this.lifeGroup, this.collectLife, null, this);
+        this.physics.add.overlap(this.player, this.boostCrateGroup, this.collectBoostCrate, null, this);
     }
 
     update(time) {
@@ -106,136 +152,207 @@ export default class Game extends Phaser.Scene {
     }
 
     setupForDesktop() {
-        const screenWidth = 1080; // Base width for desktop
-        const screenHeight = 1920; // Base height for desktop
+        const screenWidth = 1080;
+        const screenHeight = 1920;
 
-        // Background Path for Desktop
         this.background = this.add.tileSprite(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 'path');
-
-        // UI Elements
-        this.add.image(540, 100, 'boobucks-game-amount').setScale(1.0).setDepth(20);
-        this.boobucksText = this.add.text(540, 100, `${this.boobucksCollected}`, {
-            fontSize: '50px',
-            fill: '#fff',
-        }).setOrigin(0.5).setDepth(21);
-
-        const hpBar = this.add.image(540, 1820, 'ghostrun-hp-bar').setScale(1).setDepth(20);
-        this.hpText = this.add.text(540, 1810, `${this.playerHP}`, {
-            fontSize: '50px',
-            fill: '#000000',
-        }).setOrigin(0.5).setDepth(21);
     }
 
     setupForMobile() {
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
-    
-        // Add Background Path and ensure it's properly scaled
-        this.background = this.add.tileSprite(
-            screenWidth / 2,
-            screenHeight / 2,
-            screenWidth, // Match the screen width
-            screenHeight, // Match the screen height
-            'path'
-        )
-        .setOrigin(0.5, 0.5) // Centre the background
-        .setDepth(-1);
-    }
-        
-        
-    
-        // UI Elements
-        this.add.image(screenWidth / 2, 50, 'boobucks-game-amount').setScale(0.8).setDepth(20);
-        this.boobucksText = this.add.text(screenWidth / 2, 50, `${this.boobucksCollected}`, {
-            fontSize: '40px',
-            fill: '#fff',
-        }).setOrigin(0.5).setDepth(21);
-    
-        const hpBar = this.add.image(screenWidth / 2, screenHeight - 50, 'ghostrun-hp-bar').setScale(0.8).setDepth(20);
-        this.hpText = this.add.text(screenWidth / 2, screenHeight - 50, `${this.playerHP}`, {
-            fontSize: '40px',
-            fill: '#000000',
-        }).setOrigin(0.5).setDepth(21);
+
+        this.background = this.add.tileSprite(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 'path');
     }
 
-    addTouchControls() {
-        let isDragging = false; // To track if the ghost is being dragged
-    
-        this.input.on('pointerdown', (pointer) => {
-            // Check if the pointer is touching the ghost
-            const ghostBounds = this.player.getBounds();
-            if (ghostBounds.contains(pointer.x, pointer.y)) {
-                isDragging = true;
-            }
-        });
-    
-        this.input.on('pointermove', (pointer) => {
-            if (isDragging) {
-                // Only move the ghost when dragging
-                const closestColumn = this.getClosestColumn(pointer.x);
-                const closestRow = this.getClosestRow(pointer.y);
-    
-                this.player.x = closestColumn;
-                this.player.y = closestRow;
-            }
-        });
-    
-        this.input.on('pointerup', () => {
-            isDragging = false; // Stop dragging when the user lifts their finger
-        });
-    }
-    getClosestColumn(pointerX) {
-        return this.columns.reduce((closest, column) => (
-            Math.abs(column - pointerX) < Math.abs(closest - pointerX) ? column : closest
-        ));
-    }
+    updateLivesDisplay() {
+        this.livesGroup.clear(true, true); // Clear current lives display
+        const startX = this.hpBar.x - 100; // Adjust starting X position
+        const spacing = 30; // Space between lives
 
-    getClosestRow(pointerY) {
-        return this.rows.reduce((closest, row) => (
-            Math.abs(row - pointerY) < Math.abs(closest - pointerY) ? row : closest
-        ));
+        for (let i = 0; i < this.lives; i++) {
+            this.livesGroup.add(
+                this.add.image(startX + i * spacing, this.hpBar.y, 'ghost-life').setScale(0.3).setDepth(21)
+            );
+        }
     }
 
     spawnEnemy() {
-        const x = Phaser.Math.RND.pick(this.columns); // Random column
-        const enemyType = Phaser.Math.RND.pick(['pumpkin-enemy', 'tombstone-enemy']); // Random enemy type
-        const enemy = this.enemyGroup.create(x, 0, enemyType); // Create enemy at the top of the screen
-        enemy.setVelocityY(this.speed);
-        enemy.setScale(0.5); // Scale the enemy image
-        enemy.setDepth(9); // Ensure the enemy is drawn under the UI elements
-    
-        // Adjust collider size and offset for smaller hitbox
-        enemy.body.setSize(enemy.width * 0.7, enemy.height * 0.5); // 40% of original width and height
-        enemy.body.setOffset(enemy.width * 0.15, enemy.height * 0.15); // Center the collider box
+        const x = Phaser.Math.RND.pick(this.columns);
+        const enemyType = Phaser.Math.RND.pick(['pumpkin-enemy', 'tombstone-enemy']);
+        const enemy = this.enemyGroup.create(x, 0, enemyType).setVelocityY(this.speed).setScale(0.5).setDepth(9);
+        if (this.activeBoost === 'enemy-speed-up') {
+            enemy.setVelocityY(this.speed * 2); // Apply boost to new enemies
+        }
     }
-    
 
     spawnBoobuck() {
         const x = Phaser.Math.RND.pick(this.columns);
-        const boobuck = this.boobuckGroup.create(x, 0, 'boobuck');
-        boobuck.setVelocityY(this.speed);
-        boobuck.setScale(0.5);
-        boobuck.setDepth(9);
+        this.boobuckGroup.create(x, 0, 'boobuck').setVelocityY(this.speed).setScale(0.5).setDepth(9);
+    }
+
+    spawnLife() {
+        const x = Phaser.Math.RND.pick(this.columns);
+        this.lifeGroup.create(x, 0, 'ghost-life').setVelocityY(this.speed).setScale(0.5).setDepth(9);
+    }
+
+    spawnBoostCrate() {
+        const x = Phaser.Math.RND.pick(this.columns);
+        this.boostCrateGroup.create(x, 0, 'boost-crate').setVelocityY(this.speed).setScale(0.5).setDepth(9);
     }
 
     handlePlayerHit(player, enemy) {
         enemy.destroy();
-        this.playerHP -= 25;
-        this.hpText.setText(`${this.playerHP}`);
-        if (this.playerHP <= 0) {
-            console.log('Game Over');
-            this.playerHP = 100; // Reset HP for the next game
-            this.currentColumnIndex = 1; // Reset to starting column
-            this.currentRowIndex = this.rows.length - 1; // Reset to starting row
-            this.player.setPosition(this.columns[this.currentColumnIndex], this.rows[this.currentRowIndex]); // Reset position
-            this.scene.start('GameOver');
+        if (!this.activeBoost || this.activeBoost !== 'invincibility-mode') {
+            this.lives--;
+            this.updateLivesDisplay();
+            if (this.lives <= 0) {
+                console.log('Game Over');
+                this.scene.start('GameOver');
+                this.resetPlayerState(); // Reset player state after game over
+            }
         }
     }
 
+    resetPlayerState() {
+        this.lives = 4;
+        this.updateLivesDisplay();
+        this.player.setPosition(this.columns[this.currentColumnIndex], this.rows[this.currentRowIndex]);
+    }
+
     collectBoobuck(player, boobuck) {
-        boobuck.destroy();
-        this.boobucksCollected++;
-        this.boobucksText.setText(`${this.boobucksCollected}`);
+        this.tweens.add({
+            targets: boobuck,
+            x: this.boobucksImage.x,
+            y: this.boobucksImage.y,
+            scaleX: 0.2,
+            scaleY: 0.2,
+            duration: 300,
+            onComplete: () => {
+                boobuck.destroy();
+                this.boobucksCollected++;
+                this.boobucksText.setText(`${this.boobucksCollected}`);
+            },
+        });
+    }
+
+    collectLife(player, life) {
+        life.destroy();
+        this.lives++;
+        this.updateLivesDisplay();
+    }
+
+    collectBoostCrate(player, crate) {
+        crate.destroy();
+
+        // Randomly select a boost
+        const boostEffects = ['10-boobucks', 'invincibility-mode', 'magnet-boost', 'enemy-speed-up'];
+        const selectedBoost = Phaser.Math.RND.pick(boostEffects);
+
+        const boostImage = this.add.image(crate.x, crate.y, selectedBoost).setScale(0.5).setDepth(22);
+
+        // Animate boost image to the top-left corner
+        this.tweens.add({
+            targets: boostImage,
+            x: this.boostDisplay.x,
+            y: this.boostDisplay.y,
+            scaleX: 0.4,
+            scaleY: 0.4,
+            duration: 500,
+            onComplete: () => {
+                boostImage.destroy();
+                if (selectedBoost !== '10-boobucks') {
+                    this.boostDisplay.setTexture(selectedBoost); // Set boost image in the corner
+                }
+                this.applyBoost(selectedBoost); // Apply the boost effect
+            },
+        });
+    }
+
+    applyBoost(boost) {
+        switch (boost) {
+            case '10-boobucks':
+                for (let i = 0; i < 10; i++) {
+                    const boobuck = this.boobuckGroup.create(
+                        Phaser.Math.Between(0, this.cameras.main.width),
+                        0,
+                        'boobuck'
+                    );
+                    this.tweens.add({
+                        targets: boobuck,
+                        x: this.boobucksImage.x,
+                        y: this.boobucksImage.y,
+                        scaleX: 0.2,
+                        scaleY: 0.2,
+                        duration: 300,
+                        onComplete: () => {
+                            boobuck.destroy();
+                            this.boobucksCollected++;
+                            this.boobucksText.setText(`${this.boobucksCollected}`);
+                        },
+                    });
+                }
+                break;
+
+            case 'invincibility-mode':
+                this.activeBoost = 'invincibility-mode';
+                this.player.setTint(0xFFD700); // Golden glow
+                this.time.delayedCall(10000, () => {
+                    this.activeBoost = null;
+                    this.boostDisplay.setTexture('boost-crate'); // Revert boost image
+                    this.player.clearTint(); // Remove golden glow
+                });
+                break;
+
+            case 'magnet-boost':
+                this.activeBoost = 'magnet-boost';
+                this.time.addEvent({
+                    delay: 200,
+                    callback: () => {
+                        this.boobuckGroup.getChildren().forEach((boobuck) => {
+                            this.physics.moveToObject(boobuck, this.player, 400);
+                        });
+                    },
+                    repeat: 49,
+                });
+                this.time.delayedCall(10000, () => {
+                    this.activeBoost = null;
+                    this.boostDisplay.setTexture('boost-crate'); // Revert boost image
+                });
+                break;
+
+            case 'enemy-speed-up':
+                this.activeBoost = 'enemy-speed-up';
+                this.boostDisplay.setTexture('enemy-speed-up'); // Set enemy speed-up image
+
+                // Increase speed for current enemies
+                this.enemyGroup.getChildren().forEach((enemy) => {
+                    enemy.setVelocityY(this.speed * 2); // 100% faster
+                });
+
+                // Double enemy spawn rate
+                this.enemySpawnTimer.remove(false); // Remove existing timer
+                this.enemySpawnTimer = this.time.addEvent({
+                    delay: 1000, // Spawn twice as fast
+                    callback: this.spawnEnemy,
+                    callbackScope: this,
+                    loop: true,
+                });
+
+                // Revert after 10 seconds
+                this.time.delayedCall(10000, () => {
+                    this.activeBoost = null;
+                    this.boostDisplay.setTexture('boost-crate'); // Revert boost image
+                    this.enemySpawnTimer.remove(false); // Remove boosted spawn rate
+                    this.enemySpawnTimer = this.time.addEvent({
+                        delay: 2000, // Reset to normal spawn rate
+                        callback: this.spawnEnemy,
+                        callbackScope: this,
+                        loop: true,
+                    });
+                });
+                break;
+        }
     }
 
     pauseGame() {
