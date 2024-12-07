@@ -4,29 +4,32 @@ export default class PauseMenu extends Phaser.Scene {
     }
 
     create() {
-        // Overlay and Pause Menu
-        const overlay = this.add.rectangle(540, 960, 1080, 1920, 0x000000, 0.5);
-        const pauseText = this.add.text(540, 800, 'Paused', {
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+
+        this.add.rectangle(centerX, centerY, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.5);
+
+        this.add.text(centerX, centerY - 100, 'Paused', {
             fontSize: '64px',
             fill: '#fff',
         }).setOrigin(0.5);
 
-        const resumeButton = this.add.text(540, 900, 'Resume', {
+        const resumeButton = this.add.text(centerX, centerY, 'Resume', {
             fontSize: '32px',
             fill: '#fff',
         }).setOrigin(0.5).setInteractive();
         resumeButton.on('pointerdown', () => {
-            this.scene.stop(); // Stop PauseMenu scene
-            this.scene.resume('Game'); // Resume the gameplay scene
+            this.scene.stop();
+            this.scene.resume('Game');
         });
 
-        const exitButton = this.add.text(540, 1100, 'Exit', {
+        const exitButton = this.add.text(centerX, centerY + 200, 'Exit', {
             fontSize: '32px',
             fill: '#fff',
         }).setOrigin(0.5).setInteractive();
         exitButton.on('pointerdown', () => {
-            this.scene.stop('Game'); // Stop the gameplay scene
-            this.scene.start('MainMenu'); // Go to the main menu
+            this.scene.stop('Game');
+            this.scene.start('MainMenu');
         });
     }
 }

@@ -27,17 +27,24 @@ export default class Preloader extends Phaser.Scene {
         this.load.image('invincibility-mode', 'assets/invincibility-mode.png');
         this.load.image('magnet-boost', 'assets/magnet-boost.png');
         this.load.image('enemy-speed-up', 'assets/enemy-speed-up.png');
+        this.load.image('10-boobucks', 'assets/boobuck.png'); // Using boobuck image for 10-boobucks indicator
 
         // UI assets
         this.load.image('boobucks-game-amount', 'assets/boobucks-game-amount.png');
         this.load.image('pause', 'assets/pause.png');
         this.load.image('ghostrun-hp-bar', 'assets/ghostrun-hp-bar.png');
+        this.load.image('distance-box', 'assets/distance-box.png');
+        this.load.image('distance-best-box', 'assets/distance-best-box.png');
 
-        // Music
+        // Audio
         this.load.audio('phantom-midnight', 'assets/phantom-midnight.mp3');
+        this.load.audio('life_collect', 'assets/life_collect.wav');
+        this.load.audio('hit_damage', 'assets/hit_damage.wav');
+        this.load.audio('boost_sound', 'assets/boost_sound.wav');
+        this.load.audio('coin_collect', 'assets/coin_collect.wav');
     }
 
     create() {
-        this.scene.start('MainMenu'); // Start the Main Menu after preloading
+        this.scene.start('MainMenu');
     }
 }
