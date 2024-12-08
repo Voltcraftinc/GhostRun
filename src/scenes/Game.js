@@ -1,5 +1,6 @@
 import PauseMenu from './PauseMenu'; 
 
+// Configuration constants
 const COLUMN_POSITIONS = [150, 417, 684, 950];
 const ROW_POSITIONS = [200, 400, 600, 800, 1000, 1200, 1400, 1600];
 const INITIAL_LIVES = 4;
@@ -12,6 +13,7 @@ const LIFE_SPAWN_RATE = 15000;
 const BOOST_SPAWN_RATE = 20000;
 const BOOST_DURATION = 10000;
 
+// Boost configuration object
 const BOOSTS = {
     '10-boobucks': {
         duration: 0,
@@ -118,13 +120,14 @@ export default class Game extends Phaser.Scene {
     }
 
     create() {
-        this.game.canvas.style.touchAction = 'none'; // Prevent browser default gestures
-        this.input.addPointer(1); // Ensure at least one pointer for touch
+        // Prevent default gestures
+        this.game.canvas.style.touchAction = 'none';
+        this.input.addPointer(1);
 
-        const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
-        this.isMobile = isMobile;
+        // Detect mobile
+        this.isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
 
-        if (isMobile) {
+        if (this.isMobile) {
             this.setupForMobile();
         } else {
             this.setupForDesktop();
@@ -143,33 +146,16 @@ export default class Game extends Phaser.Scene {
             'ghost-main-character'
         ).setScale(0.5).setDepth(10).setCollideWorldBounds(true);
 
-        // Make player interactive and draggable (on mobile)
+        // On mobile: move ghost to pointer on touch
         if (this.isMobile) {
-            // Ensure the canvas does not interfere with touch gestures
-            this.game.canvas.style.touchAction = 'none';
-        
-            // Listen for pointerdown (start of touch)
-            this.input.on('pointerdown', (pointer) => {
-                // Move the player immediately to where the screen was touched
-                this.player.setPosition(pointer.x, pointer.y);
-            });
-        
-            // Listen for pointermove (dragging motion)
             this.input.on('pointermove', (pointer) => {
-                // Check if the pointer is actively being used
                 if (pointer.isDown) {
-                    // Continuously move the player to the dragged position
-                    this.player.setPosition(pointer.x, pointer.y);
+                    // Move player directly to the touch position
+                    this.player.x = Phaser.Math.Clamp(pointer.x, 0, this.cameras.main.width);
+                    this.player.y = Phaser.Math.Clamp(pointer.y, 0, this.cameras.main.height);
                 }
             });
-        
-            // Ensure the player stops moving after touch ends
-            this.input.on('pointerup', () => {
-                // Stop any unwanted lingering motion
-                console.log('Touch ended');
-            });
         }
-        
 
         // Lives Display
         this.livesGroup = this.add.group();
@@ -208,14 +194,16 @@ export default class Game extends Phaser.Scene {
             this.musicPlaying = true;
         }
 
-        // Input
+        // Keyboard Input for Desktop
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        // Groups
         this.enemyGroup = this.physics.add.group();
         this.boobuckGroup = this.physics.add.group();
         this.lifeGroup = this.physics.add.group();
         this.boostCrateGroup = this.physics.add.group();
 
+        // Spawners
         this.enemySpawnTimer = this.time.addEvent({
             delay: ENEMY_SPAWN_RATE,
             callback: this.spawnEnemy,
@@ -241,6 +229,7 @@ export default class Game extends Phaser.Scene {
             loop: true,
         });
 
+        // Collisions
         this.physics.add.overlap(this.player, this.enemyGroup, this.handlePlayerHit, null, this);
         this.physics.add.overlap(this.player, this.boobuckGroup, this.collectBoobuck, null, this);
         this.physics.add.overlap(this.player, this.lifeGroup, this.collectLife, null, this);
@@ -254,28 +243,26 @@ export default class Game extends Phaser.Scene {
     update(time, delta) {
         this.background.tilePositionY -= this.scrollSpeed;
 
-        // Desktop controls (arrow keys) remain if not mobile
-        if (!this.isMobile) {
-            if (time > this.lastMoveTime + this.moveDelay) {
-                if (this.cursors.left.isDown && this.currentColumnIndex > 0) {
-                    this.currentColumnIndex--;
-                    this.player.x = this.columns[this.currentColumnIndex];
-                    this.lastMoveTime = time;
-                } else if (this.cursors.right.isDown && this.currentColumnIndex < this.columns.length - 1) {
-                    this.currentColumnIndex++;
-                    this.player.x = this.columns[this.currentColumnIndex];
-                    this.lastMoveTime = time;
-                }
+        // Desktop controls (arrow keys) only if not mobile
+        if (!this.isMobile && (time > this.lastMoveTime + this.moveDelay)) {
+            if (this.cursors.left.isDown && this.currentColumnIndex > 0) {
+                this.currentColumnIndex--;
+                this.player.x = this.columns[this.currentColumnIndex];
+                this.lastMoveTime = time;
+            } else if (this.cursors.right.isDown && this.currentColumnIndex < this.columns.length - 1) {
+                this.currentColumnIndex++;
+                this.player.x = this.columns[this.currentColumnIndex];
+                this.lastMoveTime = time;
+            }
 
-                if (this.cursors.up.isDown && this.currentRowIndex > 0) {
-                    this.currentRowIndex--;
-                    this.player.y = this.rows[this.currentRowIndex];
-                    this.lastMoveTime = time;
-                } else if (this.cursors.down.isDown && this.currentRowIndex < this.rows.length - 1) {
-                    this.currentRowIndex++;
-                    this.player.y = this.rows[this.currentRowIndex];
-                    this.lastMoveTime = time;
-                }
+            if (this.cursors.up.isDown && this.currentRowIndex > 0) {
+                this.currentRowIndex--;
+                this.player.y = this.rows[this.currentRowIndex];
+                this.lastMoveTime = time;
+            } else if (this.cursors.down.isDown && this.currentRowIndex < this.rows.length - 1) {
+                this.currentRowIndex++;
+                this.player.y = this.rows[this.currentRowIndex];
+                this.lastMoveTime = time;
             }
         }
 
