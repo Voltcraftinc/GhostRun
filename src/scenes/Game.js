@@ -114,23 +114,30 @@ export default class Game extends Phaser.Scene {
         this.musicPlaying = false;
         this.distance = 0;
         this.bestDistance = parseInt(localStorage.getItem('bestDistance') || '0', 10);
+        this.isMobile = false;
     }
 
     create() {
         const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
+        this.isMobile = isMobile;
+
+        // Ensure touch action none on the canvas
+        this.game.canvas.style.touchAction = 'none';
+
+        // Add an extra pointer for mobile input
+        this.input.addPointer(1);
+
         if (isMobile) {
             this.setupForMobile();
         } else {
             this.setupForDesktop();
         }
 
-        // Pause Button
         this.pauseButton = this.add.image(this.cameras.main.width - 100, 50, 'pause')
             .setInteractive()
             .setDepth(21);
         this.pauseButton.on('pointerdown', this.pauseGame, this);
 
-        // Player
         this.player = this.physics.add.sprite(
             this.columns[this.currentColumnIndex],
             this.rows[this.currentRowIndex],
@@ -138,24 +145,20 @@ export default class Game extends Phaser.Scene {
         ).setScale(0.5).setDepth(10);
         this.player.setCollideWorldBounds(true);
 
-        // Lives Display
         this.livesGroup = this.add.group();
         this.hpBar = this.add.image(this.cameras.main.width / 2, this.cameras.main.height - 100, 'ghostrun-hp-bar')
             .setScale(0.8)
             .setDepth(20);
         this.updateLivesDisplay();
 
-        // Boobucks Display
         this.boobucksImage = this.add.image(this.cameras.main.width / 2, 50, 'boobucks-game-amount')
             .setDepth(20);
         this.boobucksText = this.add.text(this.cameras.main.width / 2, 50, `${this.boobucksCollected}`, {
             fontSize: '40px', fill: '#fff'
         }).setOrigin(0.5).setDepth(21);
 
-        // Boost Display
         this.boostDisplay = this.add.image(100, 50, 'boost-crate').setScale(0.5).setDepth(21);
 
-        // Distance Boxes
         this.distanceBox = this.add.image(100, this.cameras.main.height - 100, 'distance-box')
             .setDepth(20).setScale(0.4);
         this.distanceText = this.add.text(this.distanceBox.x, this.distanceBox.y, '0m', {
@@ -168,26 +171,23 @@ export default class Game extends Phaser.Scene {
             fontSize:'24px', fill:'#fff'
         }).setOrigin(0.5).setDepth(21);
 
-        // Background Music
         this.backgroundMusic = this.sound.add('phantom-midnight', { loop: true });
         if (window.GAME_SETTINGS.musicOn && !this.musicPlaying) {
             this.backgroundMusic.play();
             this.musicPlaying = true;
         }
 
-        // Input
         this.cursors = this.input.keyboard.createCursorKeys();
+
         if (isMobile) {
             this.addTouchControls();
         }
 
-        // Groups
         this.enemyGroup = this.physics.add.group();
         this.boobuckGroup = this.physics.add.group();
         this.lifeGroup = this.physics.add.group();
         this.boostCrateGroup = this.physics.add.group();
 
-        // Spawners
         this.enemySpawnTimer = this.time.addEvent({
             delay: ENEMY_SPAWN_RATE,
             callback: this.spawnEnemy,
@@ -213,7 +213,6 @@ export default class Game extends Phaser.Scene {
             loop: true,
         });
 
-        // Collisions
         this.physics.add.overlap(this.player, this.enemyGroup, this.handlePlayerHit, null, this);
         this.physics.add.overlap(this.player, this.boobuckGroup, this.collectBoobuck, null, this);
         this.physics.add.overlap(this.player, this.lifeGroup, this.collectLife, null, this);
@@ -227,6 +226,8 @@ export default class Game extends Phaser.Scene {
     update(time, delta) {
         this.background.tilePositionY -= this.scrollSpeed;
 
+        // Remove the if(!this.isMobile) so we can rely on dragging if on mobile
+        // On mobile we directly drag the ghost, so no need for arrow keys. On desktop arrow keys work.
         if (!this.isMobile) {
             if (time > this.lastMoveTime + this.moveDelay) {
                 if (this.cursors.left.isDown && this.currentColumnIndex > 0) {
@@ -261,14 +262,12 @@ export default class Game extends Phaser.Scene {
     }
 
     setupForDesktop() {
-        this.isMobile = false;
         const screenWidth = 1080;
         const screenHeight = 1920;
         this.background = this.add.tileSprite(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 'path');
     }
 
     setupForMobile() {
-        this.isMobile = true;
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
         this.background = this.add.tileSprite(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 'path');
@@ -435,14 +434,13 @@ export default class Game extends Phaser.Scene {
     }
 
     addTouchControls() {
-        // On mobile, use finger drag to move the ghost freely
+        // On mobile, track pointer events
         this.input.on('pointerdown', (pointer) => {
             this.dragging = true;
         });
 
         this.input.on('pointermove', (pointer) => {
             if (this.dragging) {
-                // Move player to pointer position
                 this.player.x = Phaser.Math.Clamp(pointer.x, 0, this.cameras.main.width);
                 this.player.y = Phaser.Math.Clamp(pointer.y, 0, this.cameras.main.height);
             }
