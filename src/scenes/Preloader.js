@@ -11,6 +11,8 @@ export default class Preloader extends Phaser.Scene {
         this.load.image('ghost-run-logo', 'assets/ghost-run-logo.png');
         this.load.image('run', 'assets/run.png');
         this.load.image('settings', 'assets/settings.png');
+        this.load.image('mywallet', 'assets/mywallet.png');
+        this.load.image('leaderboard', 'assets/leaderboard.png');
 
         // Gameplay assets
         this.load.image('path', 'assets/path.png');
@@ -27,7 +29,7 @@ export default class Preloader extends Phaser.Scene {
         this.load.image('invincibility-mode', 'assets/invincibility-mode.png');
         this.load.image('magnet-boost', 'assets/magnet-boost.png');
         this.load.image('enemy-speed-up', 'assets/enemy-speed-up.png');
-        this.load.image('10-boobucks', 'assets/boobuck.png'); // Using boobuck image for 10-boobucks indicator
+        this.load.image('10-boobucks', 'assets/boobuck.png');
 
         // UI assets
         this.load.image('boobucks-game-amount', 'assets/boobucks-game-amount.png');

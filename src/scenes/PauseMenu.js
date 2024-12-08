@@ -9,12 +9,12 @@ export default class PauseMenu extends Phaser.Scene {
 
         this.add.rectangle(centerX, centerY, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.5);
 
-        this.add.text(centerX, centerY - 100, 'Paused', {
+        this.add.text(centerX, centerY - 200, 'Paused', {
             fontSize: '64px',
             fill: '#fff',
         }).setOrigin(0.5);
 
-        const resumeButton = this.add.text(centerX, centerY, 'Resume', {
+        const resumeButton = this.add.text(centerX, centerY - 50, 'Resume', {
             fontSize: '32px',
             fill: '#fff',
         }).setOrigin(0.5).setInteractive();
@@ -23,7 +23,16 @@ export default class PauseMenu extends Phaser.Scene {
             this.scene.resume('Game');
         });
 
-        const exitButton = this.add.text(centerX, centerY + 200, 'Exit', {
+        const settingsButton = this.add.text(centerX, centerY + 50, 'Settings', {
+            fontSize: '32px',
+            fill: '#fff',
+        }).setOrigin(0.5).setInteractive();
+        settingsButton.on('pointerdown', () => {
+            this.scene.launch('SettingsMenu', { returnTo: 'PauseMenu' });
+            this.scene.bringToTop('SettingsMenu');
+        });
+
+        const exitButton = this.add.text(centerX, centerY + 150, 'Exit', {
             fontSize: '32px',
             fill: '#fff',
         }).setOrigin(0.5).setInteractive();

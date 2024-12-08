@@ -5,6 +5,9 @@ import MainMenu from './scenes/MainMenu.js';
 import Game from './scenes/Game.js';
 import PauseMenu from './scenes/PauseMenu.js';
 import GameOver from './scenes/GameOver.js';
+import SettingsMenu from './scenes/SettingsMenu.js';
+import Leaderboard from './scenes/Leaderboard.js';
+import MyWallet from './scenes/MyWallet.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -21,7 +24,7 @@ const config = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [Boot, Preloader, MainMenu, Game, PauseMenu, GameOver],
+    scene: [Boot, Preloader, MainMenu, Leaderboard, MyWallet, SettingsMenu, Game, PauseMenu, GameOver],
 };
 
 new Phaser.Game(config);
