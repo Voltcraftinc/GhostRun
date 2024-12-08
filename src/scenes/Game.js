@@ -145,23 +145,24 @@ export default class Game extends Phaser.Scene {
 
         // Make player interactive and draggable (on mobile)
         if (this.isMobile) {
-            // Make player interactive
-            this.player.setInteractive();
-        
-            // Handle pointer down to initiate movement
+            // Enable pointer tracking for touch inputs
             this.input.on('pointerdown', (pointer) => {
-                if (pointer.isDown) {
-                    const { x, y } = pointer;
-                    this.player.setPosition(x, y);
+                this.isTouching = true; // Track when the screen is being touched
+                this.player.setPosition(pointer.x, pointer.y); // Move the player to the touch position
+            });
+        
+            this.input.on('pointermove', (pointer) => {
+                if (this.isTouching) {
+                    this.player.setPosition(pointer.x, pointer.y); // Update player position during touch drag
                 }
             });
         
-            // Handle pointer movement to allow dragging
-            this.input.on('pointermove', (pointer) => {
-                if (pointer.isDown) {
-                    const { x, y } = pointer;
-                    this.player.setPosition(x, y);
-                }
+            this.input.on('pointerup', () => {
+                this.isTouching = false; // Stop tracking when the touch ends
+            });
+        
+            this.input.on('pointerout', () => {
+                this.isTouching = false; // Stop tracking when the pointer moves out of the game area
             });
         }
         
