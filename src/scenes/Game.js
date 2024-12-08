@@ -145,16 +145,26 @@ export default class Game extends Phaser.Scene {
 
         // Make player interactive and draggable (on mobile)
         if (this.isMobile) {
-            this.player.setInteractive({ useHandCursor: true });
-            this.input.setDraggable(this.player);
-
-            // Listen for drag events
-            this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
-                // Move player to dragX, dragY
-                gameObject.x = dragX;
-                gameObject.y = dragY;
+            // Make player interactive
+            this.player.setInteractive();
+        
+            // Handle pointer down to initiate movement
+            this.input.on('pointerdown', (pointer) => {
+                if (pointer.isDown) {
+                    const { x, y } = pointer;
+                    this.player.setPosition(x, y);
+                }
+            });
+        
+            // Handle pointer movement to allow dragging
+            this.input.on('pointermove', (pointer) => {
+                if (pointer.isDown) {
+                    const { x, y } = pointer;
+                    this.player.setPosition(x, y);
+                }
             });
         }
+        
 
         // Lives Display
         this.livesGroup = this.add.group();
