@@ -118,14 +118,11 @@ export default class Game extends Phaser.Scene {
     }
 
     create() {
+        this.game.canvas.style.touchAction = 'none'; // Prevent browser default gestures
+        this.input.addPointer(1); // Ensure at least one pointer for touch
+
         const isMobile = this.sys.game.device.os.android || this.sys.game.device.os.iOS;
         this.isMobile = isMobile;
-
-        // Ensure touch action none on the canvas
-        this.game.canvas.style.touchAction = 'none';
-
-        // Add an extra pointer for mobile input
-        this.input.addPointer(1);
 
         if (isMobile) {
             this.setupForMobile();
@@ -133,32 +130,50 @@ export default class Game extends Phaser.Scene {
             this.setupForDesktop();
         }
 
+        // Pause Button
         this.pauseButton = this.add.image(this.cameras.main.width - 100, 50, 'pause')
             .setInteractive()
             .setDepth(21);
         this.pauseButton.on('pointerdown', this.pauseGame, this);
 
+        // Player
         this.player = this.physics.add.sprite(
             this.columns[this.currentColumnIndex],
             this.rows[this.currentRowIndex],
             'ghost-main-character'
-        ).setScale(0.5).setDepth(10);
-        this.player.setCollideWorldBounds(true);
+        ).setScale(0.5).setDepth(10).setCollideWorldBounds(true);
 
+        // Make player interactive and draggable (on mobile)
+        if (this.isMobile) {
+            this.player.setInteractive({ useHandCursor: true });
+            this.input.setDraggable(this.player);
+
+            // Listen for drag events
+            this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+                // Move player to dragX, dragY
+                gameObject.x = dragX;
+                gameObject.y = dragY;
+            });
+        }
+
+        // Lives Display
         this.livesGroup = this.add.group();
         this.hpBar = this.add.image(this.cameras.main.width / 2, this.cameras.main.height - 100, 'ghostrun-hp-bar')
             .setScale(0.8)
             .setDepth(20);
         this.updateLivesDisplay();
 
+        // Boobucks Display
         this.boobucksImage = this.add.image(this.cameras.main.width / 2, 50, 'boobucks-game-amount')
             .setDepth(20);
         this.boobucksText = this.add.text(this.cameras.main.width / 2, 50, `${this.boobucksCollected}`, {
             fontSize: '40px', fill: '#fff'
         }).setOrigin(0.5).setDepth(21);
 
+        // Boost Display
         this.boostDisplay = this.add.image(100, 50, 'boost-crate').setScale(0.5).setDepth(21);
 
+        // Distance Boxes
         this.distanceBox = this.add.image(100, this.cameras.main.height - 100, 'distance-box')
             .setDepth(20).setScale(0.4);
         this.distanceText = this.add.text(this.distanceBox.x, this.distanceBox.y, '0m', {
@@ -171,17 +186,15 @@ export default class Game extends Phaser.Scene {
             fontSize:'24px', fill:'#fff'
         }).setOrigin(0.5).setDepth(21);
 
+        // Background Music
         this.backgroundMusic = this.sound.add('phantom-midnight', { loop: true });
         if (window.GAME_SETTINGS.musicOn && !this.musicPlaying) {
             this.backgroundMusic.play();
             this.musicPlaying = true;
         }
 
+        // Input
         this.cursors = this.input.keyboard.createCursorKeys();
-
-        if (isMobile) {
-            this.addTouchControls();
-        }
 
         this.enemyGroup = this.physics.add.group();
         this.boobuckGroup = this.physics.add.group();
@@ -226,8 +239,7 @@ export default class Game extends Phaser.Scene {
     update(time, delta) {
         this.background.tilePositionY -= this.scrollSpeed;
 
-        // Remove the if(!this.isMobile) so we can rely on dragging if on mobile
-        // On mobile we directly drag the ghost, so no need for arrow keys. On desktop arrow keys work.
+        // Desktop controls (arrow keys) remain if not mobile
         if (!this.isMobile) {
             if (time > this.lastMoveTime + this.moveDelay) {
                 if (this.cursors.left.isDown && this.currentColumnIndex > 0) {
@@ -252,6 +264,7 @@ export default class Game extends Phaser.Scene {
             }
         }
 
+        // Distance Tracking
         this.distance += (delta * 0.1);
         const currentDist = Math.floor(this.distance);
         this.distanceText.setText(`${currentDist}m`);
@@ -431,23 +444,5 @@ export default class Game extends Phaser.Scene {
         localStorage.setItem('bestDistance', this.bestDistance);
         this.scene.start('GameOver');
         this.resetPlayerState();
-    }
-
-    addTouchControls() {
-        // On mobile, track pointer events
-        this.input.on('pointerdown', (pointer) => {
-            this.dragging = true;
-        });
-
-        this.input.on('pointermove', (pointer) => {
-            if (this.dragging) {
-                this.player.x = Phaser.Math.Clamp(pointer.x, 0, this.cameras.main.width);
-                this.player.y = Phaser.Math.Clamp(pointer.y, 0, this.cameras.main.height);
-            }
-        });
-
-        this.input.on('pointerup', (pointer) => {
-            this.dragging = false;
-        });
     }
 }
